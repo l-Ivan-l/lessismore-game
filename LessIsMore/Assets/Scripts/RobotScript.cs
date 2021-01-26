@@ -25,10 +25,14 @@ public class RobotScript : MonoBehaviour
     public float contactRadius = 0.5f;
 
     private bool robotIsDead;
+    private bool canMove;
+
+    private Animator robotAnim;
 
     private void Awake()
     {
         robotBody = GetComponent<Rigidbody>();
+        robotAnim = GetComponent<Animator>();
         SetUpInputs();
     }
 
@@ -45,15 +49,18 @@ public class RobotScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        canMove = true;
     }
 
     // Update is called once per frame
     void Update()
     {
-        RobotMove(inputMaster.PlayerActions.Movement.ReadValue<float>());
-        CheckIfRobotGrounded();
-        RobotJumpPhysics();
+        if(!robotIsDead && canMove)
+        {
+            RobotMove(inputMaster.PlayerActions.Movement.ReadValue<float>());
+            CheckIfRobotGrounded();
+            RobotJumpPhysics();
+        }
     }
 
     void SetUpInputs()
@@ -66,14 +73,17 @@ public class RobotScript : MonoBehaviour
     void RobotMove(float _direction)
     {
         Debug.Log("Robot is moving");
+        robotAnim.SetInteger("XVelocity", (int)_direction);
         robotBody.velocity = (new Vector2(_direction * speed, robotBody.velocity.y));
+        FlipRobot((int)_direction);
     }
 
     void RobotJump()
     {
-        if(onGround)
+        if(onGround && !robotIsDead && canMove)
         {
             Debug.Log("Robot jump");
+            robotAnim.SetTrigger("Jump");
             buttonJumpHold = true;
             robotBody.velocity = new Vector2(robotBody.velocity.x, 0);
             robotBody.velocity += Vector3.up * jumpForce;
@@ -90,6 +100,7 @@ public class RobotScript : MonoBehaviour
     void CheckIfRobotGrounded()
     {
         onGround = Physics.CheckSphere(transform.position + contactOffset, contactRadius, groundLayer);
+        robotAnim.SetBool("OnGround", onGround);
     }
 
     void RobotJumpPhysics()
@@ -102,11 +113,25 @@ public class RobotScript : MonoBehaviour
         {
             robotBody.velocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
         }
+
+        robotAnim.SetInteger("YVelocity", (int)robotBody.velocity.y);
     }
 
     void RobotDeath()
     {
         robotIsDead = true;
+        canMove = false;
+        robotAnim.SetTrigger("Death");
+    }
+
+    void FlipRobot(int _direction)
+    {
+        if(_direction != 0)
+        {
+            Vector3 newRot = transform.eulerAngles;
+            newRot.y = 90 * _direction;
+            transform.eulerAngles = newRot;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
