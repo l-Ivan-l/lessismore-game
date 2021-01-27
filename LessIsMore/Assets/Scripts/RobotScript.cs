@@ -29,6 +29,10 @@ public class RobotScript : MonoBehaviour
 
     private Animator robotAnim;
 
+    [Space]
+    [SerializeField]
+    private GameObject cameraFollower;
+
     private void Awake()
     {
         robotBody = GetComponent<Rigidbody>();
@@ -61,6 +65,18 @@ public class RobotScript : MonoBehaviour
             CheckIfRobotGrounded();
             RobotJumpPhysics();
         }
+    }
+
+    private void LateUpdate()
+    {
+        CameraFollowerOnXOnly();
+    }
+
+    void CameraFollowerOnXOnly()
+    {
+        Vector3 robotPos = this.transform.position;
+        robotPos.y = transform.position.y + 1.5f;
+        cameraFollower.transform.position = robotPos;
     }
 
     void SetUpInputs()
@@ -119,6 +135,7 @@ public class RobotScript : MonoBehaviour
 
     void RobotDeath()
     {
+        robotBody.velocity = Vector3.zero;
         robotIsDead = true;
         canMove = false;
         robotAnim.SetTrigger("Death");

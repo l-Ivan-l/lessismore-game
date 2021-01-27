@@ -268,7 +268,7 @@ GameObject:
   - component: {fileID: 1467112584256905071}
   m_Layer: 0
   m_Name: Robot
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -315,7 +315,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1467112584256905069}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 4f732500b28d5ee488c3309ec4d71471, type: 2}
   m_IsTrigger: 0
   m_Enabled: 1
   m_Radius: 0.4
@@ -350,17 +350,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 715babe502e041f49868198794607779, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
+  speed: 8
   robotLife: 100
-  jumpDamage: 10
+  jumpDamage: 1
   jumpForce: 6
-  fallMultiplier: 3
-  lowJumpMultiplier: 2.5
+  fallMultiplier: 4
+  lowJumpMultiplier: 3
   groundLayer:
     serializedVersion: 2
     m_Bits: 256
   contactOffset: {x: 0, y: 0, z: 0}
   contactRadius: 0.25
+  cameraFollower: {fileID: 0}
 --- !u!1 &2133894734112585481
 GameObject:
   m_ObjectHideFlags: 0
