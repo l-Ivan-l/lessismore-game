@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
 
 public class RobotScript : MonoBehaviour
 {
@@ -9,6 +9,7 @@ public class RobotScript : MonoBehaviour
     private Rigidbody robotBody;
     public float speed = 10f;
 
+    private float maxRobotLife;
     [SerializeField]
     private float robotLife = 100f;
     [SerializeField]
@@ -32,12 +33,17 @@ public class RobotScript : MonoBehaviour
     [Space]
     [SerializeField]
     private GameObject cameraFollower;
+    [SerializeField]
+    private GameController gameController;
+    [SerializeField]
+    private bool onSlope;
 
     private void Awake()
     {
         robotBody = GetComponent<Rigidbody>();
         robotAnim = GetComponent<Animator>();
         SetUpInputs();
+        maxRobotLife = robotLife;
     }
 
     private void OnEnable()
@@ -59,24 +65,35 @@ public class RobotScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(!robotIsDead && canMove)
+        SlopeDetector();
+        if(!robotIsDead && canMove && !gameController.gameOver)
         {
             RobotMove(inputMaster.PlayerActions.Movement.ReadValue<float>());
             CheckIfRobotGrounded();
             RobotJumpPhysics();
+            
+            if(onSlope && !onGround)
+            {
+                Vector3 vel = robotBody.velocity;
+                vel.x = 0f;
+                robotBody.velocity = vel;
+            }
         }
     }
 
     private void LateUpdate()
     {
-        CameraFollowerOnXOnly();
+        CameraFollower();
     }
 
-    void CameraFollowerOnXOnly()
+    void CameraFollower()
     {
-        Vector3 robotPos = this.transform.position;
-        robotPos.y = transform.position.y + 1.5f;
-        cameraFollower.transform.position = robotPos;
+        if (transform.position.x >= -1f && transform.position.x < 299f && transform.position.y > -1f)  
+        {
+            Vector3 robotPos = this.transform.position;
+            robotPos.y = transform.position.y + 1.5f;
+            cameraFollower.transform.position = robotPos;
+        }
     }
 
     void SetUpInputs()
@@ -121,16 +138,33 @@ public class RobotScript : MonoBehaviour
 
     void RobotJumpPhysics()
     {
-        if (robotBody.velocity.y < 0)
+        if(!onGround)
         {
-            robotBody.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-        }
-        else if (robotBody.velocity.y > 0 && !buttonJumpHold)
-        {
-            robotBody.velocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
+            if (robotBody.velocity.y < 0)
+            {
+                robotBody.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+            }
+            else if (robotBody.velocity.y > 0 && !buttonJumpHold)
+            {
+                robotBody.velocity += Vector3.up * Physics.gravity.y * (lowJumpMultiplier - 1) * Time.deltaTime;
+            }
         }
 
         robotAnim.SetInteger("YVelocity", (int)robotBody.velocity.y);
+    }
+
+    void SlopeDetector()
+    {
+        Vector3 slopeDetectorPos = transform.position;
+        slopeDetectorPos.y = transform.position.y + 0.25f;
+        if (Physics.Raycast(slopeDetectorPos, transform.TransformDirection(Vector3.forward), 0.75f, groundLayer))
+        {
+            Debug.Log("Slope");
+            onSlope = true;
+        } else
+        {
+            onSlope = false;
+        }
     }
 
     void RobotDeath()
@@ -151,16 +185,50 @@ public class RobotScript : MonoBehaviour
         }
     }
 
+    void CheckColorChange()
+    {
+        if(robotLife <= maxRobotLife * 0.5f && robotLife > maxRobotLife * 0.25f)
+        {
+            gameController.ChangeGameHUE(-140f);
+        }
+        else if(robotLife <= maxRobotLife * 0.25f)
+        {
+            gameController.ChangeGameHUE(170f);
+        }
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if(collision.gameObject.CompareTag("Ground"))
         {
+            CheckColorChange();
             if (onGround && robotLife <= 0f && !robotIsDead)
             {
                 //Robot death
                 Debug.Log("Robot is dead");
                 RobotDeath();
             }
+        }
+        if(collision.gameObject.CompareTag("Rock"))
+        {
+            if(!robotIsDead)
+            {
+                RobotDeath();
+            }
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.gameObject.CompareTag("Death"))
+        {
+            //Game Over
+            gameController.GameOver();
+        }
+        if (other.gameObject.CompareTag("Victory"))
+        {
+            //Win
+            gameController.Victory();
         }
     }
 
@@ -169,5 +237,11 @@ public class RobotScript : MonoBehaviour
         // Display the explosion radius when selected
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position + contactOffset, contactRadius);
+        Gizmos.color = Color.blue;
+        Vector3 slopeDetectorPos = transform.position;
+        slopeDetectorPos.y = transform.position.y + 0.25f;
+        Vector3 detectorEnd = slopeDetectorPos;
+        detectorEnd.x = slopeDetectorPos.x + 0.75f;
+        Gizmos.DrawLine(slopeDetectorPos, detectorEnd);
     }
 }

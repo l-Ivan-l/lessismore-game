@@ -81,6 +81,52 @@ public class @InputMaster : IInputActionCollection, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""UIActions"",
+            ""id"": ""deb4c144-361d-447c-a727-99b0f7c6c0b9"",
+            ""actions"": [
+                {
+                    ""name"": ""Close/Return"",
+                    ""type"": ""Button"",
+                    ""id"": ""daffcc5e-4260-4f50-b7f3-5263f36c6508"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""Navigation"",
+                    ""type"": ""Value"",
+                    ""id"": ""1d82cd1a-d66e-4f01-ac2f-8d02041854bd"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""831039b6-2b1e-4e3e-9b38-0c54d15678b2"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Close/Return"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""45705bd5-1723-4f83-9f33-94476cd9e2f9"",
+                    ""path"": ""<Mouse>/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Navigation"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -117,6 +163,10 @@ public class @InputMaster : IInputActionCollection, IDisposable
         m_PlayerActions = asset.FindActionMap("PlayerActions", throwIfNotFound: true);
         m_PlayerActions_Movement = m_PlayerActions.FindAction("Movement", throwIfNotFound: true);
         m_PlayerActions_Jump = m_PlayerActions.FindAction("Jump", throwIfNotFound: true);
+        // UIActions
+        m_UIActions = asset.FindActionMap("UIActions", throwIfNotFound: true);
+        m_UIActions_CloseReturn = m_UIActions.FindAction("Close/Return", throwIfNotFound: true);
+        m_UIActions_Navigation = m_UIActions.FindAction("Navigation", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -203,6 +253,47 @@ public class @InputMaster : IInputActionCollection, IDisposable
         }
     }
     public PlayerActionsActions @PlayerActions => new PlayerActionsActions(this);
+
+    // UIActions
+    private readonly InputActionMap m_UIActions;
+    private IUIActionsActions m_UIActionsActionsCallbackInterface;
+    private readonly InputAction m_UIActions_CloseReturn;
+    private readonly InputAction m_UIActions_Navigation;
+    public struct UIActionsActions
+    {
+        private @InputMaster m_Wrapper;
+        public UIActionsActions(@InputMaster wrapper) { m_Wrapper = wrapper; }
+        public InputAction @CloseReturn => m_Wrapper.m_UIActions_CloseReturn;
+        public InputAction @Navigation => m_Wrapper.m_UIActions_Navigation;
+        public InputActionMap Get() { return m_Wrapper.m_UIActions; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(UIActionsActions set) { return set.Get(); }
+        public void SetCallbacks(IUIActionsActions instance)
+        {
+            if (m_Wrapper.m_UIActionsActionsCallbackInterface != null)
+            {
+                @CloseReturn.started -= m_Wrapper.m_UIActionsActionsCallbackInterface.OnCloseReturn;
+                @CloseReturn.performed -= m_Wrapper.m_UIActionsActionsCallbackInterface.OnCloseReturn;
+                @CloseReturn.canceled -= m_Wrapper.m_UIActionsActionsCallbackInterface.OnCloseReturn;
+                @Navigation.started -= m_Wrapper.m_UIActionsActionsCallbackInterface.OnNavigation;
+                @Navigation.performed -= m_Wrapper.m_UIActionsActionsCallbackInterface.OnNavigation;
+                @Navigation.canceled -= m_Wrapper.m_UIActionsActionsCallbackInterface.OnNavigation;
+            }
+            m_Wrapper.m_UIActionsActionsCallbackInterface = instance;
+            if (instance != null)
+            {
+                @CloseReturn.started += instance.OnCloseReturn;
+                @CloseReturn.performed += instance.OnCloseReturn;
+                @CloseReturn.canceled += instance.OnCloseReturn;
+                @Navigation.started += instance.OnNavigation;
+                @Navigation.performed += instance.OnNavigation;
+                @Navigation.canceled += instance.OnNavigation;
+            }
+        }
+    }
+    public UIActionsActions @UIActions => new UIActionsActions(this);
     private int m_KeyboardSchemeIndex = -1;
     public InputControlScheme KeyboardScheme
     {
@@ -225,5 +316,10 @@ public class @InputMaster : IInputActionCollection, IDisposable
     {
         void OnMovement(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
+    }
+    public interface IUIActionsActions
+    {
+        void OnCloseReturn(InputAction.CallbackContext context);
+        void OnNavigation(InputAction.CallbackContext context);
     }
 }
