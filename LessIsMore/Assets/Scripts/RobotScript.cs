@@ -24,9 +24,12 @@ public class RobotScript : MonoBehaviour
     public LayerMask groundLayer;
     public Vector3 contactOffset;
     public float contactRadius = 0.5f;
+    public float hangTime = 0.2f;
+    private float hangCounter;
 
     private bool robotIsDead;
     private bool canMove;
+    private bool jumped = true;
 
     private Animator robotAnim;
 
@@ -37,6 +40,15 @@ public class RobotScript : MonoBehaviour
     private GameController gameController;
     [SerializeField]
     private bool onSlope;
+    [SerializeField]
+    private Light robotLight;
+    [SerializeField]
+    private ParticleSystem footstepsVFX;
+    private ParticleSystem.EmissionModule footEmission;
+    [SerializeField]
+    private ParticleSystem impactVFX;
+
+    private float robotDir;
 
     private void Awake()
     {
@@ -44,6 +56,7 @@ public class RobotScript : MonoBehaviour
         robotAnim = GetComponent<Animator>();
         SetUpInputs();
         maxRobotLife = robotLife;
+        footEmission = footstepsVFX.emission;
     }
 
     private void OnEnable()
@@ -68,22 +81,25 @@ public class RobotScript : MonoBehaviour
         SlopeDetector();
         if(!robotIsDead && canMove && !gameController.gameOver)
         {
-            RobotMove(inputMaster.PlayerActions.Movement.ReadValue<float>());
+            robotDir = inputMaster.PlayerActions.Movement.ReadValue<float>();
             CheckIfRobotGrounded();
             RobotJumpPhysics();
-            
-            if(onSlope && !onGround)
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (!robotIsDead && canMove && !gameController.gameOver)
+        {
+            RobotMove(robotDir);
+            CameraFollower();
+            if (onSlope && !onGround || transform.position.y <= -2.5f)
             {
                 Vector3 vel = robotBody.velocity;
                 vel.x = 0f;
                 robotBody.velocity = vel;
             }
         }
-    }
-
-    private void LateUpdate()
-    {
-        CameraFollower();
     }
 
     void CameraFollower()
@@ -105,7 +121,15 @@ public class RobotScript : MonoBehaviour
 
     void RobotMove(float _direction)
     {
-        Debug.Log("Robot is moving");
+        if(_direction != 0 && onGround)
+        {
+            //Debug.Log("Robot is moving");
+            footEmission.rateOverTime = 35f;
+        }
+        else
+        {
+            footEmission.rateOverTime = 0f;
+        }
         robotAnim.SetInteger("XVelocity", (int)_direction);
         robotBody.velocity = (new Vector2(_direction * speed, robotBody.velocity.y));
         FlipRobot((int)_direction);
@@ -113,20 +137,21 @@ public class RobotScript : MonoBehaviour
 
     void RobotJump()
     {
-        if(onGround && !robotIsDead && canMove)
+        if(hangCounter > 0f && !robotIsDead && canMove)
         {
-            Debug.Log("Robot jump");
+            //Debug.Log("Robot jump");
             robotAnim.SetTrigger("Jump");
             buttonJumpHold = true;
             robotBody.velocity = new Vector2(robotBody.velocity.x, 0);
             robotBody.velocity += Vector3.up * jumpForce;
             robotLife -= jumpDamage;
+            jumped = true;
         }
     }
 
     void RobotNotJumping()
     {
-        Debug.Log("Robot not jumping");
+        //Debug.Log("Robot not jumping");
         buttonJumpHold = false;
     }
 
@@ -134,6 +159,15 @@ public class RobotScript : MonoBehaviour
     {
         onGround = Physics.CheckSphere(transform.position + contactOffset, contactRadius, groundLayer);
         robotAnim.SetBool("OnGround", onGround);
+
+        if(onGround)
+        {
+            hangCounter = hangTime;
+        }
+        else
+        {
+            hangCounter -= Time.deltaTime;
+        }
     }
 
     void RobotJumpPhysics()
@@ -159,7 +193,7 @@ public class RobotScript : MonoBehaviour
         slopeDetectorPos.y = transform.position.y + 0.25f;
         if (Physics.Raycast(slopeDetectorPos, transform.TransformDirection(Vector3.forward), 0.75f, groundLayer))
         {
-            Debug.Log("Slope");
+            //Debug.Log("Slope");
             onSlope = true;
         } else
         {
@@ -173,6 +207,7 @@ public class RobotScript : MonoBehaviour
         robotIsDead = true;
         canMove = false;
         robotAnim.SetTrigger("Death");
+        gameController.GameOver();
     }
 
     void FlipRobot(int _direction)
@@ -197,15 +232,29 @@ public class RobotScript : MonoBehaviour
         }
     }
 
+    IEnumerator ColorTicker()
+    {
+        robotLight.intensity = 0f;
+        yield return new WaitForSeconds(0.15f);
+        robotLight.intensity = 5f;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if(collision.gameObject.CompareTag("Ground"))
         {
             CheckColorChange();
+            if(jumped)
+            {
+                //Sparks here too
+                impactVFX.Play();
+                StartCoroutine(ColorTicker());
+                jumped = false;
+            }
             if (onGround && robotLife <= 0f && !robotIsDead)
             {
                 //Robot death
-                Debug.Log("Robot is dead");
+                //Debug.Log("Robot is dead");
                 RobotDeath();
             }
         }
@@ -228,6 +277,9 @@ public class RobotScript : MonoBehaviour
         if (other.gameObject.CompareTag("Victory"))
         {
             //Win
+            canMove = false;
+            robotBody.velocity = Vector3.zero;
+            this.gameObject.SetActive(false);
             gameController.Victory();
         }
     }

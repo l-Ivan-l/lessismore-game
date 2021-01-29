@@ -19,7 +19,7 @@ public class MovingPlatform : MonoBehaviour
     {
         PlatformMovement();
     }
-
+    
     void PlatformMovement()
     {
         Vector3 currentPosition = transform.position;
