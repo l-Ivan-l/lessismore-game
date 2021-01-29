@@ -50,6 +50,17 @@ public class RobotScript : MonoBehaviour
 
     private float robotDir;
 
+    [Space]
+    [Header("Audio")]
+    [SerializeField]
+    private AudioClip[] stepClips;
+    private AudioSource walkAudio;
+    [SerializeField]
+    private SoundManager soundManager;
+    private bool firstFall = true;
+    private bool warningPaletteActive = false;
+    private bool dangerPaletteActive = false;
+
     private void Awake()
     {
         robotBody = GetComponent<Rigidbody>();
@@ -57,6 +68,7 @@ public class RobotScript : MonoBehaviour
         SetUpInputs();
         maxRobotLife = robotLife;
         footEmission = footstepsVFX.emission;
+        walkAudio = GetComponent<AudioSource>();
     }
 
     private void OnEnable()
@@ -141,6 +153,7 @@ public class RobotScript : MonoBehaviour
         {
             //Debug.Log("Robot jump");
             robotAnim.SetTrigger("Jump");
+            soundManager.PlayJumpSound(0.4f);
             buttonJumpHold = true;
             robotBody.velocity = new Vector2(robotBody.velocity.x, 0);
             robotBody.velocity += Vector3.up * jumpForce;
@@ -207,6 +220,7 @@ public class RobotScript : MonoBehaviour
         robotIsDead = true;
         canMove = false;
         robotAnim.SetTrigger("Death");
+        soundManager.PlayDeathSound(1f);
         gameController.GameOver();
     }
 
@@ -222,13 +236,15 @@ public class RobotScript : MonoBehaviour
 
     void CheckColorChange()
     {
-        if(robotLife <= maxRobotLife * 0.5f && robotLife > maxRobotLife * 0.25f)
+        if(robotLife <= maxRobotLife * 0.5f && robotLife > maxRobotLife * 0.25f && !warningPaletteActive)
         {
             gameController.ChangeGameHUE(-140f);
+            warningPaletteActive = true;
         }
-        else if(robotLife <= maxRobotLife * 0.25f)
+        else if(robotLife <= maxRobotLife * 0.25f && !dangerPaletteActive)
         {
             gameController.ChangeGameHUE(170f);
+            dangerPaletteActive = true;
         }
     }
 
@@ -246,7 +262,15 @@ public class RobotScript : MonoBehaviour
             CheckColorChange();
             if(jumped)
             {
-                //Sparks here too
+                if(firstFall)
+                {
+                    soundManager.PlayInitLandSound(1f);
+                    soundManager.PlayColorChangeSound(1f);
+                    firstFall = false;
+                } else
+                {
+                    soundManager.PlayLandSound(1f);
+                }
                 impactVFX.Play();
                 StartCoroutine(ColorTicker());
                 jumped = false;
@@ -272,6 +296,7 @@ public class RobotScript : MonoBehaviour
         if(other.gameObject.CompareTag("Death"))
         {
             //Game Over
+            soundManager.PlayDeathSound(1f);
             gameController.GameOver();
         }
         if (other.gameObject.CompareTag("Victory"))
@@ -296,4 +321,17 @@ public class RobotScript : MonoBehaviour
         detectorEnd.x = slopeDetectorPos.x + 0.75f;
         Gizmos.DrawLine(slopeDetectorPos, detectorEnd);
     }
+
+    #region Audio Walk
+    private AudioClip GetRandomClip()
+    {
+        return stepClips[Random.Range(0, stepClips.Length)];
+    }
+
+    public void Step()
+    {
+        AudioClip clip = GetRandomClip();
+        walkAudio.PlayOneShot(clip);
+    }
+    #endregion
 }

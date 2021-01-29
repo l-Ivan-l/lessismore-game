@@ -1,12 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
 
 public class MovingPlatform : MonoBehaviour
 {
     [SerializeField]
     private float speed = 2f;
     private int direction; //1 = Right, 2 = Left
+    [SerializeField]
+    private CinemachineBrain cm;
 
     // Use this for initialization
     void Start()
@@ -52,6 +55,7 @@ public class MovingPlatform : MonoBehaviour
         if(collision.gameObject.CompareTag("Player"))
         {
             collision.gameObject.transform.SetParent(transform);
+            cm.m_UpdateMethod = CinemachineBrain.UpdateMethod.LateUpdate;
         }
     }
 
@@ -60,6 +64,7 @@ public class MovingPlatform : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             collision.gameObject.transform.SetParent(null);
+            cm.m_UpdateMethod = CinemachineBrain.UpdateMethod.FixedUpdate;
         }
     }
 }

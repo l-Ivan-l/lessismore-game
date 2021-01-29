@@ -156,6 +156,17 @@ public class @InputMaster : IInputActionCollection, IDisposable
                     ""action"": ""Jump"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1471cca9-16b4-400d-b0b7-5e9009ce993c"",
+                    ""path"": ""<DualShockGamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""PS4"",
+                    ""action"": ""Jump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -229,6 +240,17 @@ public class @InputMaster : IInputActionCollection, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""83806730-d7f4-4833-a662-1f2bcb1dda93"",
+                    ""path"": ""<DualShockGamepad>/buttonEast"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""PS4"",
+                    ""action"": ""Close/Return"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""45705bd5-1723-4f83-9f33-94476cd9e2f9"",
                     ""path"": ""<Mouse>/position"",
                     ""interactions"": """",
@@ -256,6 +278,17 @@ public class @InputMaster : IInputActionCollection, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
+                    ""action"": ""Accept"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9e564440-500a-4b7a-922b-c636d768e4a6"",
+                    ""path"": ""<DualShockGamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""PS4"",
                     ""action"": ""Accept"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -297,6 +330,17 @@ public class @InputMaster : IInputActionCollection, IDisposable
             ""devices"": [
                 {
                     ""devicePath"": ""<Gamepad>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""PS4"",
+            ""bindingGroup"": ""PS4"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<DualShockGamepad>"",
                     ""isOptional"": false,
                     ""isOR"": false
                 }
@@ -482,6 +526,15 @@ public class @InputMaster : IInputActionCollection, IDisposable
         {
             if (m_GamepadSchemeIndex == -1) m_GamepadSchemeIndex = asset.FindControlSchemeIndex("Gamepad");
             return asset.controlSchemes[m_GamepadSchemeIndex];
+        }
+    }
+    private int m_PS4SchemeIndex = -1;
+    public InputControlScheme PS4Scheme
+    {
+        get
+        {
+            if (m_PS4SchemeIndex == -1) m_PS4SchemeIndex = asset.FindControlSchemeIndex("PS4");
+            return asset.controlSchemes[m_PS4SchemeIndex];
         }
     }
     public interface IPlayerActionsActions

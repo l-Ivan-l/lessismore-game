@@ -10,6 +10,8 @@ public class GameController : MonoBehaviour
 {
     public bool gameOver = false;
     private bool onTitleScreen = true;
+    private bool onCreditsPanel = false;
+    private bool onTutorialPanel = false;
     private bool win = false;
     public GameObject robot;
     public Volume volume;
@@ -21,24 +23,25 @@ public class GameController : MonoBehaviour
     public Animator fadeAnim;
     public GameObject creditsPanel;
     public GameObject buttonsPanel;
+    public GameObject tutorialPanel;
     public Button playBtn;
+    public Button creditsBtn;
+    public Button tutorialBtn;
 
     private InputMaster inputMaster;
 
     [Space]
     public Animator lightAnim;
 
+    [SerializeField]
+    private SoundManager soundManager;
+
     private void Awake()
     {
         inputMaster = new InputMaster();
         inputMaster.UIActions.CloseReturn.performed += _ => CloseCredits();
+        inputMaster.UIActions.CloseReturn.performed += _ => CloseTutorial();
         inputMaster.UIActions.CloseReturn.performed += _ => QuitGameAfterWin();
-/*
-#if UNITY_EDITOR
-        QualitySettings.vSyncCount = 0; // VSync must be disabled.
-        Application.targetFrameRate = 400;
-#endif
-*/
     }
 
     private void Start()
@@ -97,6 +100,7 @@ public class GameController : MonoBehaviour
 
     public void ChangeGameHUE(float _newColor)
     {
+        soundManager.PlayColorChangeSound(1f);
         gameColor.hueShift.Override(_newColor);
     }
 
@@ -112,15 +116,37 @@ public class GameController : MonoBehaviour
     {
         buttonsPanel.SetActive(false);
         creditsPanel.SetActive(true);
+        onCreditsPanel = true;
     }
 
     public void CloseCredits()
     {
-        if(onTitleScreen)
+        if(onTitleScreen && onCreditsPanel)
         {
             creditsPanel.SetActive(false);
             buttonsPanel.SetActive(true);
             playBtn.Select();
+            onCreditsPanel = false;
+            //creditsBtn.GetComponent<Animator>().SetTrigger(creditsBtn.animationTriggers.normalTrigger);
+        }
+    }
+
+    public void OpenTutorial()
+    {
+        buttonsPanel.SetActive(false);
+        tutorialPanel.SetActive(true);
+        onTutorialPanel = true;
+    }
+
+    public void CloseTutorial()
+    {
+        if (onTitleScreen && onTutorialPanel)
+        {
+            tutorialPanel.SetActive(false);
+            buttonsPanel.SetActive(true);
+            playBtn.Select();
+            onTutorialPanel = false;
+            //tutorialBtn.GetComponent<Animator>().SetTrigger(creditsBtn.animationTriggers.normalTrigger);
         }
     }
 

@@ -16,6 +16,10 @@ public class RocksTrigger : MonoBehaviour
     public float shakeFrequency = 2f;
     private float shakeElapsedTime = 0f;
 
+    [Space]
+    [SerializeField]
+    private SoundManager soundManager;
+
     private void Awake()
     {
         col = GetComponent<Collider>();    
@@ -56,6 +60,7 @@ public class RocksTrigger : MonoBehaviour
         if(other.gameObject.CompareTag("Player"))
         {
             //Release rocks
+            soundManager.PlayTremorSound(1f);
             col.enabled = false;
             shakeElapsedTime = shakeDuration; //Activate screenshake
             StartCoroutine(RocksFalling());
